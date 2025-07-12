@@ -67,7 +67,8 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = "folger_results.db"
 TABLE_NAME_DETAILS = "details"
-TABLE_NAME = "all_details"
+TABLE_NAME_ALL = "all_details"
+TABLE_NAME = TABLE_NAME_DETAILS  # Use the details table for now
 
 
 def fetch_with_retries(url, max_retries=5, base_delay=1.0, timeout=10):
@@ -203,6 +204,7 @@ def scrape_detail_page_by_id(detail_id: str) -> dict[str, str]:
 
 
 URLS = [
+    "https://firstlines.folger.edu/advancedSearch.php?val1=v.a.124&col1=shelfmark1&sort=lib1#results",
     "https://firstlines.folger.edu/advancedSearch.php?val1=add.+44963&col1=shelfmark1&sort=lib1#results",
     "https://firstlines.folger.edu/advancedSearch.php?val1=add.+11811&col1=shelfmark1&sort=lib1#results",
     "https://firstlines.folger.edu/advancedSearch.php?val1=add.+15227&col1=shelfmark1&sort=lib1#results",
@@ -245,46 +247,47 @@ URLS = [
     "https://firstlines.folger.edu/advancedSearch.php?val1=b.205&col1=shelfmark1&lib_yo=Y&sort=lib1#results",
     "https://firstlines.folger.edu/advancedSearch.php?val1=b.62&col1=shelfmark1&lib_yo=Y&sort=lib1#results",
     "https://firstlines.folger.edu/advancedSearch.php?val1=MS+240%2F7&col1=shelfmark1&sort=lib1#results",
+    "https://firstlines.folger.edu/advancedSearch.php?val1=v.a.339&col1=shelfmark1#results",
 ]
 
 # ok, this is the main function that will be called when the script is run
-# if __name__ == "__main__":
-#     conn = init_db()
-#     for url in URLS:
-#         logger.info(f"Scraping URL: {url}")
-#         results = scrape_folger(url, pause_duration=1.0, max_details=math.inf, conn=conn)
-#         print(f"Scraped {len(results)} details from {url}")
-#         logger.info(f"Finished scraping URL: {url}")
-#         logger.info("Sleeping for 1 second before next request...")
-#         time.sleep(1)
-#     logger.info("All URLs have been processed.")
-#     conn.close()
-
 if __name__ == "__main__":
     conn = init_db()
-    start_id = 0
-    end_id = 1000
-    pause_duration = 2.5
-    # get start_id and end_id from command line arguments
-    import sys
-
-    if len(sys.argv) > 1:
-        start_id = int(sys.argv[1])
-    if len(sys.argv) > 2:
-        end_id = int(sys.argv[2])
-    logger.info(f"Scraping details with IDs from {start_id} to {end_id}")
-    for detail_id in range(start_id, end_id + 1):
-        if conn and detail_exists(conn, detail_id):
-            logger.info(f"Detail {detail_id} already exists in DB, skipping.")
-            continue
-        try:
-            detail_data = scrape_detail_page_by_id(str(detail_id))
-            if conn and detail_data:
-                insert_detail(conn, detail_data)
-            else:
-                logger.warning(f"No data found for detail ID: {detail_id}")
-        except Exception as e:
-            logger.error(f"Error scraping detail ID {detail_id}: {e}")
-        time.sleep(pause_duration)
-    logger.info("Finished scraping all details.")
+    for url in URLS:
+        logger.info(f"Scraping URL: {url}")
+        results = scrape_folger(url, pause_duration=1.0, max_details=math.inf, conn=conn)
+        print(f"Scraped {len(results)} details from {url}")
+        logger.info(f"Finished scraping URL: {url}")
+        logger.info("Sleeping for 1 second before next request...")
+        time.sleep(1)
+    logger.info("All URLs have been processed.")
     conn.close()
+
+# if __name__ == "__main__":
+#     conn = init_db()
+#     start_id = 0
+#     end_id = 1000
+#     pause_duration = 2.5
+#     # get start_id and end_id from command line arguments
+#     import sys
+
+#     if len(sys.argv) > 1:
+#         start_id = int(sys.argv[1])
+#     if len(sys.argv) > 2:
+#         end_id = int(sys.argv[2])
+#     logger.info(f"Scraping details with IDs from {start_id} to {end_id}")
+#     for detail_id in range(start_id, end_id + 1):
+#         if conn and detail_exists(conn, detail_id):
+#             logger.info(f"Detail {detail_id} already exists in DB, skipping.")
+#             continue
+#         try:
+#             detail_data = scrape_detail_page_by_id(str(detail_id))
+#             if conn and detail_data:
+#                 insert_detail(conn, detail_data)
+#             else:
+#                 logger.warning(f"No data found for detail ID: {detail_id}")
+#         except Exception as e:
+#             logger.error(f"Error scraping detail ID {detail_id}: {e}")
+#         time.sleep(pause_duration)
+#     logger.info("Finished scraping all details.")
+#     conn.close()
